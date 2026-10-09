@@ -1,0 +1,6 @@
+name = "uplc-proof/induction-tests"
+version = "0.0.0"
+compiler = "v1.1.21"
+plutus = "v3"
+license = "Apache-2.0"
+description = "Aiken functions compiled to UPLC test fixtures for UplcProof.Induction"

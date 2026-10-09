@@ -1,0 +1,30 @@
+name = "UplcProof"
+version = "0.1.0"
+description = "Kernel-checked proofs and counterexamples for compiled Aiken (UPLC) scripts"
+license = "Apache-2.0"
+keywords = ["cardano", "aiken", "uplc", "plutus", "smart-contracts"]
+defaultTargets = ["UplcProof", "UplcProofTests"]
+
+# Pinned revisions (not `main`).
+[[require]]
+name = "PlutusCore"
+git = "https://github.com/input-output-hk/PlutusCoreBlaster"
+rev = "18e6c95f75b179307ea59830a41466b3da3b46f4"
+
+[[require]]
+name = "CardanoLedgerApi"
+git = "https://github.com/input-output-hk/CardanoLedgerApiBlaster"
+rev = "577e3eb03b5be09354cfdb1c0d0c12e9e16541a0"
+
+[[require]]
+name = "Blaster"
+git = "https://github.com/input-output-hk/Lean-blaster"
+rev = "ee111d8365be82c869e1ae0fc9baef6e6569297d"
+
+# The library: `import UplcProof` (or one module, e.g. `import UplcProof.Induction`).
+[[lean_lib]]
+name = "UplcProof"
+
+# `lake build UplcProofTests`: proofs, refusals and axiom checks.
+[[lean_lib]]
+name = "UplcProofTests"

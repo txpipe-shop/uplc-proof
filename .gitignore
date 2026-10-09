@@ -1,0 +1,6 @@
+# Lake: dependencies and build outputs
+.lake/
+# Aiken: downloaded packages and build outputs (also in each Aiken project)
+build/
+artifacts/
+.DS_Store
