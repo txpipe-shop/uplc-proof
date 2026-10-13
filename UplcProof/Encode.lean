@@ -94,4 +94,14 @@ theorem Verdict.accepts {s : Program} {c : Data} (h : Verdict s c true) : Accept
 theorem Verdict.rejects {s : Program} {c : Data} (h : Verdict s c false) : ¬ Accepts s c :=
   fun ha => Bool.false_ne_true (h.mpr ha)
 
+/-- The verdict `true`, from a run that accepts (`uplc_cex_closer` proves it by running
+    the script). -/
+theorem Verdict.of_accepts {s : Program} {c : Data} (h : Accepts s c) : Verdict s c true :=
+  ⟨fun _ => h, fun _ => rfl⟩
+
+/-- The verdict `false`, from a run that does not accept. -/
+theorem Verdict.of_not_accepts {s : Program} {c : Data} (h : ¬ Accepts s c) :
+    Verdict s c false :=
+  ⟨fun e => absurd e Bool.false_ne_true, fun ha => absurd ha h⟩
+
 end UplcProof

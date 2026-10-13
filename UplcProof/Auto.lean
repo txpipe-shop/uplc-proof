@@ -770,6 +770,6 @@ def run (stx : Syntax) : TacticM Unit := withMainContext do
 
 end Auto
 
-@[tactic uplcAutoTac] def evalUplcAuto : Tactic := Auto.run
+@[tactic uplcAutoTac] def evalUplcAuto : Tactic := fun stx => Sym.withSession (Auto.run stx)
 
 end UplcProof

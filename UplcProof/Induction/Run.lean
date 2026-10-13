@@ -35,11 +35,13 @@ open UplcProof.Sym
 namespace UplcProof.Tactic
 
 /-- A context for `drive` with no induction variable: the run only splits on the
-    conditions of `if`s. -/
+    conditions of `if`s (and on symbolic values a `match` waits on). In aux mode
+    unless `aux := false` (`Ctx.aux`): a run shared by branches is stated once, as an
+    auxiliary theorem, and the cheap refutations come first. -/
 def runCtx (phase : String) (closer? : Option (MVarId → TacticM Bool))
-    (ts : SimpArgs := ⟨#[]⟩) : Ctx :=
+    (ts : SimpArgs := ⟨#[]⟩) (aux := true) : Ctx :=
   { τ := mkConst ``Nat, res? := none, gen? := none, ts, candidates := #[],
-    split? := none, phase, closer? }
+    split? := none, phase, closer?, aux }
 
 /-- `Halts p args v` or `Fails p args`, up to reducible definitions (`Accepts s c`):
     the program, its arguments and the claimed value (`none` for `Fails`). -/
@@ -112,8 +114,9 @@ private partial def evalLeaves (e : Expr) : MetaM Expr := do
 
 /-- A piece of `evalRun`'s proof. -/
 private inductive RunLink where
-  /-- `count` CEK steps from `a` to `b`: `exec a count = b`, checked by the kernel. -/
-  | exec (a b : Expr) (count : Nat)
+  /-- `count` CEK steps from `a` to `b`, with `proof : exec a count = b` (`Sym.Stop.proofs`),
+      checked by the kernel. -/
+  | exec (a b : Expr) (count : Nat) (proof : Expr)
   /-- `a = b` by `proof`: a closed `equalsData` replaced by its value. -/
   | eq (a b proof : Expr)
 
@@ -133,14 +136,16 @@ private inductive RunLink where
     closed, or a builtin whose semantics does not reduce: `DecodeUtf8`, by
     well-founded recursion too), or takes more than `fuel` steps.
 
-    The segments `exec a c = b` are checked by the kernel only (each step was
-    computed by `whnf`; the kernel re-runs it). Cost: about 4.1 `maxHeartbeats`
-    units per step, so runs of up to about 48,000 steps fit in the default 200,000
-    (`fib 13`: 33,891 steps, 137,000 units, 3.6 s); longer runs need
-    `set_option maxHeartbeats 0` (`fib 14`: 54,861 steps, 223,000 units, 6.0 s;
-    `fib 15`: 88,791 steps), and the kernel's check then takes about as long again
-    (timings: Apple M5, Lean 4.24). A full `ScriptContext` run of a real validator
-    is far shorter (1,228 steps, two `equalsData`).
+    The segments `exec a c = b` are proved by the lemmas of
+    `UplcProof.Induction.Steps` (`Sym.Stop.proofs`; the steps without one by
+    evaluation) and checked by the kernel only. Cost: about 0.83 `maxHeartbeats`
+    units per step (`fib 13`: 33,891 steps, 28,000 units, 0.9 s; `fib 14`: 54,861
+    steps, 45,000 units, 1.4 s), so a run within the default fuel fits in the
+    default 200,000. Refuting `Halts` on `fib 13` and on `fib 14`, the run and the
+    kernel's check together, takes 7.6 s and 2.6 GB (it took 17.7 s and 4.8 GB with
+    every step by `whnf` and `rfl`; timings: Apple M5, Lean 4.24). A full
+    `ScriptContext` run of a real validator is far shorter (1,228 steps, two
+    `equalsData`).
 
     To refute `Halts p args v`: if `T` is `Error`, `not_halts_of_reaches_error proof`;
     if `T` is `Halt w`, `not_halts_of_reaches_halt proof (hne : v ≠ w)`. -/
@@ -153,8 +158,8 @@ def evalRun (p args : Expr) (fuel : Nat := maxSteps) : TacticM (Expr × Expr) :=
   repeat
     let stop ← runUntil cache cur (fun _ => pure false) (fuel - steps)
     let mut a := cur
-    for (b, c) in stop.segments do
-      links := links.push (.exec a b c)
+    for (b, c, pf) in ← stop.proofs cur do
+      links := links.push (.exec a b c pf)
       a := b
     steps := steps + stop.steps
     cur := stop.state
@@ -180,8 +185,7 @@ def evalRun (p args : Expr) (fuel : Nat := maxSteps) : TacticM (Expr × Expr) :=
   let mut proof := mkApp3 (mkConst ``Reaches.of_eq) Tl T (mkApp2 (mkConst ``Eq.refl [1]) stateTy Tl)
   for l in links.reverse do
     proof := match l with
-      | .exec a b c => mkAppN (mkConst ``Reaches.of_exec)
-          #[a, b, T, mkNatLit c, mkApp2 (mkConst ``Eq.refl [1]) stateTy b, proof]
+      | .exec a b c pf => mkAppN (mkConst ``Reaches.of_exec) #[a, b, T, mkNatLit c, pf, proof]
       | .eq a b h => mkAppN (mkConst ``Reaches.of_eq_left) #[a, b, T, h, proof]
   return (T, ← mkExpectedTypeHint proof (mkApp2 (mkConst ``Reaches) st0 T))
 
@@ -197,7 +201,7 @@ namespace UplcProof
     `uplc_induction`; for a symbolic `Bool` argument, `cases b <;> uplc_run`. -/
 syntax (name := uplcRunTac) "uplc_run" (" [" Lean.Parser.Tactic.simpArg,* "]")? : tactic
 
-@[tactic uplcRunTac] def evalUplcRun : Tactic := fun stx => withMainContext do
+@[tactic uplcRunTac] def evalUplcRun : Tactic := fun stx => Sym.withSession <| withMainContext do
   let simpArgs := if stx[1].getNumArgs > 0 then stx[1][1].getSepArgs else #[]
   Tactic.runOn (← getMainGoal) none "run" simpArgs
   replaceMainGoal []

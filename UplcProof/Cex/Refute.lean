@@ -142,7 +142,7 @@ def refuteClosers : Array Closer := #[
   ⟨"uplc_cex_closer", do evalTactic (← `(tactic| uplc_cex_closer))⟩]
 
 /-- Closers for a hypothesis `H` of the statement, at the values. -/
-private def hypClosers : Array Closer := #[
+def hypClosers : Array Closer := #[
   ⟨"decide", do evalTactic (← `(tactic| decide))⟩,
   ⟨"rfl", do evalTactic (← `(tactic| rfl))⟩,
   ⟨"trivial", do evalTactic (← `(tactic| trivial))⟩,
@@ -303,12 +303,20 @@ def refuteCore (goal : MVarId) (supply : Supply) (expected? : Option Nat := none
     match ← exposeBinder ty with
     | .forallE n d b _ =>
         if ← isProp d then
+          let d ← instantiateMVars d
           let g ← mkFreshExprSyntheticOpaqueMVar d
-          match ← closeWith hypClosers g.mvarId! with
-          | .ok _ => pure ()
-          | .error fails =>
-              throwError "the hypothesis{indentExpr d}\ndoes not hold at these values \
-                (no closer proves it; tried {failSummary fails})"
+          if d.hasExprMVar then
+            -- a value left open (`_`): only the run of this hypothesis may give it
+            if let .error fails ← closeWith (hypClosers.filter (·.name == "uplc_cex_closer")) g.mvarId! then
+              throwError "the hypothesis{indentExpr d}\ndoes not hold at these values, or does not \
+                give the value left open (`_`): only a hypothesis `Halts p args (VCon (Data x))` \
+                whose run halts gives `x` ({(fails.map (·.2)).toList})"
+          else
+            match ← closeWith hypClosers g.mvarId! with
+            | .ok _ => pure ()
+            | .error fails =>
+                throwError "the hypothesis{indentExpr d}\ndoes not hold at these values \
+                  (no closer proves it; tried {failSummary fails})"
           args := args.push g
           ty := b.instantiate1 g
         else
@@ -320,6 +328,13 @@ def refuteCore (goal : MVarId) (supply : Supply) (expected? : Option Nat := none
           bs := bs.push { name := n, type := d, value := v, source?, note? }
     | .letE _ _ v b _ => ty := b.instantiate1 v
     | _ => break
+  -- every value left open (`_`) was given by a hypothesis
+  bs ← bs.mapM fun b => do
+    let v ← instantiateMVars b.value
+    if v.hasExprMVar then
+      throwError "no value for {b.name} (`_`): no hypothesis after it of the form \
+        `Halts p args (VCon (Data {b.name}))` gives one"
+    return { b with value := v }
   let Q ← instantiateMVars ty
   let g ← mkFreshExprSyntheticOpaqueMVar (mkNot Q)
   let closer ← match ← refuteGoal g.mvarId! with
@@ -425,14 +440,24 @@ def refuteWithEntries (goal : MVarId) (entries : Array (String × String)) : Tac
 /-- `refute_with t₁, …, tₙ` closes `¬ ∀ (x₁ : α₁) … (xₙ : αₙ), P` by instantiating
     the binders with `t₁ … tₙ`, discharging the hypotheses of the statement at
     those values, and refuting `P[t̄]` (see the module doc for the closers). The
-    proof uses no axiom beyond `propext`, `Quot.sound`, `Classical.choice`. -/
+    proof uses no axiom beyond `propext`, `Quot.sound`, `Classical.choice`.
+
+    `_` leaves a value open, for a binder `x` that a later hypothesis
+    `Halts p args (VCon (Data x))` determines (a script context, computed by a
+    script from the other values): the value is the one the run of `p` on `args`
+    halts with (`uplc_cex_closer`). -/
 syntax (name := refuteWithTac) "refute_with" (ppSpace colGt term),* : tactic
+
+/-- The note on a value left open (`_`) and given by a hypothesis's run. -/
+private def runNote : String := "computed: the run of the hypothesis that names it"
 
 @[tactic refuteWithTac] def evalRefuteWith : Tactic := fun stx => withMainContext do
   let terms := stx[1].getSepArgs
   let goal ← getMainGoal
   let _ ← refuteCore goal (expected? := terms.size) fun i n ty => do
     let some t := terms[i]? | throwError "refute_with: no value for binder {n} ({terms.size} given)"
+    if t.isOfKind ``Lean.Parser.Term.hole then
+      return (← mkFreshExprMVar ty (userName := n), none, some runNote)
     return (← elabUserValue t ty, none, none)
   replaceMainGoal []
 

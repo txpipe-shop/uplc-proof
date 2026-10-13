@@ -405,4 +405,35 @@ example (m : Nat) :
 /-- info: 'UplcProofTests.Induction.guarded_sum_halts' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms guarded_sum_halts
 
+/-! ## The engine's modes agree
+
+`uplc.fastStep 2` compares every step the engine computes on the expression
+(`Sym.Fast`) with `whnf` of `step`, and fails at the first difference;
+`uplc.stepLemmas 0` proves every step by evaluation instead of by the lemmas of
+`UplcProof.Induction.Steps`. The same claims, the same results. -/
+
+set_option uplc.fastStep 2 in
+example (n : Nat) : Halts factorialHex.script [int n] (intV (fact n)) := by
+  uplc_induction n
+
+set_option uplc.fastStep 2 in
+example (xs : List Int) (acc : Int) :
+    Halts countPositiveAccHex.script [list xs, int acc]
+      (intV (acc + (xs.filter (0 < ·)).length)) := by
+  uplc_induction xs generalizing acc
+
+set_option uplc.fastStep 2 in
+example (xs : List Int) (x : Int) (h : x ∈ xs) :
+    Halts requireMemberHex.script [list xs, int x] (.VCon (.Bool true)) := by
+  uplc_induction xs (loop := fun k => .VCon (.Bool (k.contains x)))
+
+set_option uplc.stepLemmas 0 in
+example (n : Nat) : Halts factorialHex.script [int n] (intV (fact n)) := by
+  uplc_induction n
+
+set_option uplc.stepLemmas 0 in
+example (xs : List Int) (x : Int) (h : x ∈ xs) :
+    Halts requireMemberHex.script [list xs, int x] (.VCon (.Bool true)) := by
+  uplc_induction xs (loop := fun k => .VCon (.Bool (k.contains x)))
+
 end UplcProofTests.Induction

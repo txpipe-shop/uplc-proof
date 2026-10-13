@@ -403,9 +403,10 @@ example (x : Int) (_h : x = 5) :
   fails_with "the script fails" (left; uplc_run)
   right; trivial
 
--- a loop on a symbolic list is for `uplc_induction`
+-- a loop on a symbolic list is for `uplc_induction`: the run splits the list by its
+-- constructors (`chooseList` on a free list) up to the bound (`Tactic.maxCaseSplits`)
 example (xs : List Int) : Halts sumHex.script [list xs] (intV xs.sum) ∨ True := by
-  fails_with "symbolic execution is stuck" (left; uplc_run)
+  fails_with "split a symbolic value 24 times on this path" (left; uplc_run)
   right; trivial
 
 -- a loop on a symbolic `Int` whose exit test is an `if` (`n == 0`): every iteration

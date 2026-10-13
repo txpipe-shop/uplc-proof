@@ -116,10 +116,11 @@ example (n : Nat) : Halts sumToBoundedHex.script [int n] (intV (triangle n)) ∨
   fails_with "1000000]: the script fails (reaches `Error`)" (left; uplc_induction n)
   right; trivial
 
--- induction on the wrong variable: the run waits on `xs`, not on `n`
+-- induction on the wrong variable: the run waits on `xs`, not on `n`. It splits `xs` by
+-- its constructors (`chooseList` on a free list), and the `nil` case fails.
 example (xs : List Int) (n : Nat) :
     Halts requireMemberHex.script [list xs, int n] (.VCon (.Bool true)) ∨ True := by
-  fails_with "entry: symbolic execution is stuck" (left; uplc_induction n)
+  fails_with "entry, xs is nil: the script fails" (left; uplc_induction n)
   right; trivial
 
 -- induction on a variable the script does not get
@@ -204,8 +205,10 @@ def sumPairs : List Int → Int
   | a :: b :: rest => a * b + sumPairs rest
   | _ => 0
 
+-- recursion on the tail of the tail: no loop head on `xs`'s own tail, so the run splits
+-- the tails by their constructors until the bound (`Tactic.maxCaseSplits`)
 example (xs : List Int) : Halts sumPairsHex.script [list xs] (intV (sumPairs xs)) ∨ True := by
-  fails_with "symbolic execution is stuck" (left; uplc_induction xs)
+  fails_with "split a symbolic value 24 times on this path" (left; uplc_induction xs)
   right; trivial
 
 /-! ## Splits nest at most `uplc.maxSplits` deep -/

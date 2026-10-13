@@ -1,6 +1,7 @@
 import UplcProofTests.Induction.Positive
 import UplcProofTests.Induction.Negative
 import UplcProofTests.Induction.Run
+import UplcProofTests.Induction.Kernel
 
 /-!
 # Tests of `UplcProof.Induction`
@@ -11,4 +12,7 @@ import UplcProofTests.Induction.Run
   expected error.
 * `UplcProofTests.Induction.Run`: `uplc_run` and `evalRun` (runs without
   induction), and the lemmas about runs.
+* `UplcProofTests.Induction.Kernel`: what the kernel must reject: wrong instances of
+  the step lemmas, of the name inequalities and of the saturated builtins, and a
+  wrong auxiliary theorem, each built the way the engine builds them.
 -/

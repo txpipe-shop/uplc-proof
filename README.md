@@ -108,7 +108,7 @@ aiken-blaster-examples (not public yet); each refutation takes about 0.35 s
 | `uplc_induction n` | proves a loop correct for every `n : Nat` (passed as `int n`) or every list `n` |
 | `uplc_run` | runs a script on symbolic inputs, splitting on each `if` |
 | `uplc_auto` | proves or refutes an Aiken property test: looks for a counterexample with Blaster (an SMT tactic backed by Z3), then tries `uplc_run` and `uplc_induction` |
-| `refute_with v₁, …` | proves a property false from given values; `blaster_refute` finds the values with Blaster |
+| `refute_with v₁, …` | proves a property false from given values; `blaster_refute` finds the values with Blaster. `_` leaves a script context open: the hypothesis `Halts ctx … (VCon (Data c))` gives it by running `ctx`; a hypothesis `Verdict v c ok` is checked by running the validator |
 | `Reachable.invariant` (theorem) | a property that holds initially and that every step keeps holds in every reachable state |
 
 ## What a result means
@@ -149,7 +149,8 @@ warnings: UplcProof's theorems do not depend on those declarations, and
 ## Tests
 
 `lake build` builds the library and the tests in `UplcProofTests/`: every
-theorem with a check of its axioms, and the cases that must be refused.
+theorem with a check of its axioms, the cases that must be refused, and wrong
+proof steps that Lean's kernel must reject.
 `UplcProofTests/Readme.lean` checks the examples above. Fixtures are in `Tests/`:
 Aiken sources with their compiled scripts, and the two scripts from TxPipe's
 aiken-blaster-examples.
