@@ -63,6 +63,9 @@ default), `"reason"` (why there is no kernel-checked refutation, or why Blaster
 failed), `"ms"` (milliseconds per phase: `blaster`, `refute`, `render`; off with
 `set_option uplc.cex.timings false`). Each key appears once. Binder names are
 the statement's, with `_1`, `_2` appended to repeated ones (`distinctNames`).
+`uplc_auto` extends this contract: statuses `proved` (an info message) and
+`error`, keys `method`, `leaf`, `blaster`, `fuel`, `spurious` (see
+`UplcProof.Auto`).
 
 The human-readable lines that follow: the counterexample as `  name := <lean>`
 lines, then the refutation as a ready-to-paste snippet. With
@@ -77,7 +80,8 @@ example : ¬∀ (x : Int), x * x ≠ 9 ∨ x > 0 := by
   refute_with -3
 ```
 
-The refuted statement is `¬ ∀ (free variables and hypotheses of the goal), goal`.
+The refuted statement is `∀ (free variables and hypotheses of the goal), goal`;
+the kernel checks a proof of its negation.
 Once Blaster has been called, `blaster_refute`'s errors also start with an
 `UPLC-RESULT` line. When Blaster itself fails (an error, or a runtime exception
 such as deep recursion on a large term), `blaster_pretty` and `blaster_refute`

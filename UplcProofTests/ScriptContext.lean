@@ -7,7 +7,7 @@ import CardanoLedgerApi.V3
 
 Two Plutus V3 validators of aiken-blaster-examples, as compiled in its `plutus.json`
 (`Tests/Validators/`): `time_lock` (spend after the datum's deadline) and `vault`
-(a parameterised two-party time lock). For each, a FALSE claim close to one the
+(a parameterized two-party time lock). For each, a FALSE claim close to one the
 examples prove with Blaster, stated on the ORIGINAL script with PlutusCore's CEK
 machine (`Accepts` / `Halts`, the context passed as `Data`, `IsData.toData ctx`),
 and refuted at Blaster's counterexample:
@@ -20,7 +20,8 @@ and refuted at Blaster's counterexample:
   at a fixed fuel), its model matched to the original claim's binders by name and
   refuted (`UplcProof.Cex.analyse`), so the raw text is regenerated, not pasted.
 
-The conclusion `¬ Accepts …` is refuted by `uplc_cex_closer`: `evalRun` runs the
+The conclusion (`Accepts …` for time_lock, `Halts vault.script … vUnit` for the
+parameterized vault) is refuted by `uplc_cex_closer`: `evalRun` runs the
 script on the concrete context to `Error`, in kernel-checked segments (vault's
 run waits on two closed `equalsData`, decided by `dataEqB`). Then what must be
 rejected: values that are not a counterexample (`t ≥ deadline`, the validator
@@ -28,8 +29,8 @@ accepts), refused by `refute_with` with its error.
 
 ## Measurements
 
-Apple M5, 32 GB, Lean v4.24.0, 2026-10-08, with other jobs running (load average
-about 7): an idle machine is faster. Per refutation, Lean's profiler
+Apple M5, 32 GB, Lean v4.24.0, 2026-10-08, with other jobs running: an idle
+machine is faster. Per refutation, Lean's profiler
 (`set_option profiler true`, `profiler.threshold 1`, `Elab.async false`), three
 runs, ranges. "run" is `uplc_cex_closer` (`evalRun`: the symbolic CEK run, closed
 `equalsData` decided by `dataEqB`), "other" the rest of the tactic (elaborating the
@@ -202,8 +203,9 @@ theorem timeLock_refute_cex : ¬ TimeLockClaim := by
     "closure: true",
     "upper: (CardanoLedgerApi.V1.Time.UpperBound.FiniteUpperBound 3 true)"
 
-/-- The counterexample context, readable: a claim (`Constr 0 []`) spending `ref`
-    with deadline 18457, in a transaction whose validity range is `[18456, 3]`. -/
+/-- The counterexample context, readable: a claim (`Constr 0 []`) spending `tlRef`
+    with deadline 18457, in a transaction whose validity range is `[lower, 3]`
+    (Blaster's model: `lower = 18456`). -/
 def tlRef : TxOutRef := ⟨⟨"!1!"⟩, 5⟩
 def tlCtx (lower : Int) : ScriptContext where
   scriptContextTxInfo :=
@@ -225,7 +227,7 @@ theorem timeLock_refute_with : ¬ TimeLockClaim := by
 -- (c) Blaster run here on the `#prep_uplc` form, its model refuting the original claim
 #prep_uplc timeLockPrep timeLock spendingInputs 20000
 
-/-- The same claim on `#prep_uplc`'s `.prop` (Blaster's optimised term, not proved
+/-- The same claim on `#prep_uplc`'s `.prop` (Blaster's optimized term, not proved
     equal to the script): what Blaster is given. -/
 abbrev TimeLockClaimPrep : Prop :=
   ∀ (ctx : ScriptContext) (deadline t : Int) (ref : TxOutRef)
@@ -248,7 +250,7 @@ theorem timeLock_refute_blaster : ¬ TimeLockClaim := by
 
 /-! ## `vault`
 
-Parameterised by `seed_utxo`; a `Claim { amount, own_input_index,
+Parameterized by `seed_utxo`; a `Claim { amount, own_input_index,
 continuing_output_index }` by the beneficiary must, among others, come after
 `unlock_time`. The claim is aiken-blaster-examples' `claim_complete` with the
 `unlockTime ≤ now` conjunct of `validClaim` dropped, over the parameters of

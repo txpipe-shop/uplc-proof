@@ -17,8 +17,9 @@ validator vault_bug {
   }
 }
 
-/// Wrong (the bug); `aiken check` usually passes: its 100 random pairs hit
-/// `amount = cap + 1` in about one run in five (8 of 40 seeds, aiken v1.1.24).
+/// A wrong property (the bug): `aiken check` usually passes it, because its 100
+/// random pairs hit `amount = cap + 1` in only about one run in five (8 of 40
+/// seeds, aiken v1.1.24).
 test prop_bug_accepts_only_up_to_cap(args via fuzz.both(fuzz.int(), fuzz.int())) {
   let (cap, amount) = args
   let ok =

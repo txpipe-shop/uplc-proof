@@ -7,10 +7,13 @@ The fixtures (`Tests/Auto/Scripts/`) are the body functions of property tests
 written in Aiken (`Tests/Auto/aiken/`: `lib/math.ak`, `lib/owner.ak`,
 `lib/lists.ak`, `validators/vault.ak`, `validators/vault_bug.ak`), exported by
 `Tests/Auto/aiken/export.sh` (aiken v1.1.24, traces off): each takes the test's
-primitive leaves (`Int`, `Bool`, `ByteArray`, `List<Int>`) and returns the test's
-`Bool`; a validator is called inside the body function (`vault.spend(…)`), so each claim is
+inputs (`Int`, `Bool`, `ByteArray`, `List<Int>`) and returns the test's `Bool`; a
+validator is called inside the body function (`vault.spend(…)`), so each claim is
 about one script: the validator's handler as compiled into the test, which is not
-the same UPLC program as the validator's script in `plutus.json`. `factorial_acc.hex` is a copy of an `UplcProof.Induction` fixture.
+the same UPLC program as the validator's script in `plutus.json`.
+`factorial_acc.hex` is not a property test: it is a copy of
+`Tests/Induction/Scripts/factorial_acc.hex` (a fixture of `UplcProofTests.Induction`,
+aiken v1.1.21).
 
 * proved, with kernel-checked proofs and clean axioms: the factorial property (an
   `Int` leaf, a loop, given a loop spec), the vault (a validator call),

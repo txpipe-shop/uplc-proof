@@ -11,13 +11,13 @@ import UplcProof.Cex.Report
 # `UplcProof.Cex.Tactic`: Blaster, then a kernel-checked refutation
 
 * `blaster_pretty (opts)*`: a drop-in for `blaster`. Falsified: the counterexample
-  is turned into a refutation of `¬ ∀ (free variables and hypotheses of the
-  goal), goal`, checked by the kernel in a throwaway environment, and the tactic
+  is turned into a refutation of `∀ (free variables and hypotheses of the
+  goal), goal` (a proof of its negation), checked by the kernel in a throwaway environment, and the tactic
   fails with the `UPLC-RESULT` message (status `refuted`, or `falsified` when no
   kernel-checked refutation could be built). Valid: exactly `blaster` (the goal
   is closed with the axiom `Blaster.Tactic.blasterProven`, with `blaster`'s
   warning) plus an info message `UPLC-RESULT` with status `oracle`.
-  Undetermined: as `blaster` (the goal is replaced by Blaster's optimised form),
+  Undetermined: as `blaster` (the goal is replaced by Blaster's optimized form),
   plus an info message with status `unknown`.
 * `blaster_refute (opts)*`: on a goal `¬ S`, runs Blaster on `S`; Falsified: the
   refutation closes the goal (the error is the `UPLC-RESULT` message if none can
@@ -54,7 +54,7 @@ inductive BlasterOutcome where
   | valid
   /-- The model, as `(binder name, raw z3 value)` entries. -/
   | falsified (entries : Array (String × String))
-  /-- Blaster's optimised goal. -/
+  /-- Blaster's optimized goal. -/
   | undetermined (optExpr : Expr)
 deriving Inhabited
 

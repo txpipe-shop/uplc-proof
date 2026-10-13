@@ -41,7 +41,7 @@ def byteStringName : Name := ``PlutusCore.ByteString.PlutusCore.ByteStringIntern
 /-- The constant name of `PlutusCore`'s `Data` type. -/
 def dataName : Name := ``PlutusCore.Data.PlutusCore.DataInternal.Data
 
-/-- A natural number literal, after weak head normalisation if needed. -/
+/-- A natural number literal, after weak head normalization if needed. -/
 private def natVal? (e : Expr) : MetaM (Option Nat) := do
   if let some n ← getNatValue? e then return some n
   match (← whnfD e) with
@@ -49,7 +49,7 @@ private def natVal? (e : Expr) : MetaM (Option Nat) := do
   | _ => return none
 
 /-- An integer literal (`5`, `-3`, `Int.ofNat 5`, `Int.negSucc 2`), after weak
-    head normalisation if needed. -/
+    head normalization if needed. -/
 private def intVal? (e : Expr) : MetaM (Option Int) := do
   if let some i ← getIntValue? e then return some i
   let e' ← whnfD e

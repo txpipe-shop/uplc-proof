@@ -1,6 +1,6 @@
 use aiken/fuzz
 
-/// A spend is allowed when the vault is open or the signer is the owner.
+/// A spend is allowed when the lock is open or the signer is the owner.
 pub fn can_spend(is_open: Bool, signer: ByteArray, owner: ByteArray) -> Bool {
   is_open || signer == owner
 }
@@ -11,7 +11,7 @@ test prop_owner_can_always_spend(args via fuzz.both(fuzz.bool(), fuzz.bytearray(
   can_spend(is_open, owner, owner)
 }
 
-/// A wrong property: a stranger can never spend (false when the vault is open).
+/// A wrong property: a stranger can never spend (false when the lock is open).
 test prop_stranger_can_never_spend(
   args via fuzz.tuple3(fuzz.bool(), fuzz.bytearray(), fuzz.bytearray()),
 ) {

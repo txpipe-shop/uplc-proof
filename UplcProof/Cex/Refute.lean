@@ -4,7 +4,7 @@ import UplcProof.Cex.Bridge
 import UplcProof.Cex.Render
 
 /-!
-# `UplcProof.Cex.Refute`: refuting `¬ ∀ x̄, P` at concrete values
+# `UplcProof.Cex.Refute`: proving `¬ ∀ x̄, P` at concrete values
 
 `refute_with t₁, …, tₙ` closes a goal `¬ ∀ (x₁ : α₁) … (xₙ : αₙ), P` (or
 `(∀ …) → False`): it instantiates the binders with the values, discharges every

@@ -1,8 +1,10 @@
-//// Recursive functions exported as standalone UPLC programs
+//// Functions exported as standalone UPLC programs
 //// (`aiken export --module fixtures --name <fn>`), used as test fixtures
-//// for UplcProof (`UplcProof.Induction`). Each one exercises one recursion
-//// shape: Int vs List recursion, list results, an extra unchanged argument,
-//// an accumulator, a branch on data, recursion on `n - 2` and deeper.
+//// for UplcProof (`UplcProof.Induction`). Most exercise one recursion shape:
+//// Int vs List recursion, list results, an extra unchanged argument, an
+//// accumulator, a branch on data, recursion on `n - 2` and deeper; the last
+//// ones take `Bool`, `ByteArray` and `Data` parameters, or compare with a
+//// large literal.
 
 pub fn factorial(n: Int) -> Int {
   when n is {
@@ -116,7 +118,7 @@ pub fn last_or(xs: List<Int>, acc: Int) -> Int {
   }
 }
 
-/// The accumulator before the list (not supported).
+/// The accumulator before the list (refused by `uplc_induction`).
 pub fn sum_acc_first(acc: Int, xs: List<Int>) -> Int {
   when xs is {
     [] -> acc
@@ -152,7 +154,7 @@ pub fn half(n: Int) -> Int {
   }
 }
 
-/// Recursion on `n - 3` (not supported).
+/// Recursion on `n - 3` (refused by `uplc_induction`).
 pub fn tribonacci(n: Int) -> Int {
   if n <= 2 {
     n
@@ -161,7 +163,7 @@ pub fn tribonacci(n: Int) -> Int {
   }
 }
 
-/// A loop that fails for some inputs (not supported).
+/// A loop that fails for some inputs (refused by `uplc_induction`).
 pub fn even_or_fail(n: Int) -> Bool {
   if n == 0 {
     True
@@ -172,7 +174,7 @@ pub fn even_or_fail(n: Int) -> Bool {
   }
 }
 
-/// Two elements at a time (not supported).
+/// Two elements at a time (refused by `uplc_induction`).
 pub fn sum_pairs(xs: List<Int>) -> Int {
   when xs is {
     [a, b, ..rest] -> a * b + sum_pairs(rest)
@@ -377,4 +379,21 @@ test same_refs_sample() {
     [Ref { id: #"01", idx: 0 }],
     [],
   )
+}
+
+// A bound written as a large literal, as a fuzzer's `int_between(0, 1_000_000)`
+// puts it in a test (exported with aiken v1.1.24). After the split on `n`, the
+// comparison of `n + 1` with 1_000_000 must stay a branch condition: reducing it
+// unfolds `n + 1 - 1_000_000` one unit at a time.
+
+pub fn sum_to_bounded(n: Int) -> Int {
+  if n <= 1_000_000 {
+    sum_to(n)
+  } else {
+    fail
+  }
+}
+
+test sum_to_bounded_sample() {
+  sum_to_bounded(10) == 55
 }

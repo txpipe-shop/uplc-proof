@@ -24,19 +24,20 @@ checks, or fails with a message whose first line is machine-readable
 ## Pipeline
 
 1. **Blaster** (z3), within `timeout` seconds, on the bounded claim
-   `∀ x̄, SafeState (exec (initState p args) N) v`: "within `N` CEK steps the run
-   has not gone wrong" (it halted with `v`, or is still running; `Error` or
-   another value is wrong). `N` grows as `fuel/8`, `fuel/4`, `fuel/2`, `fuel`
+   `∀ x̄, SafeState (exec (initState p args) N) v` (`NoHaltState (exec …)` for a
+   `Fails` claim): "within `N` CEK steps the run has not gone wrong" (it halted
+   with `v`, or is still running; `Error` or another value is wrong). `N` grows as `fuel/8`, `fuel/4`, `fuel/2`, `fuel`
    while Blaster says valid and time remains. Small `N` come first because they
    give small formulas: with the buggy factorial property of the tests, z3 finds
    `n = 2` at `N = 250` in about 0.5 s, but at `N = 1000` it gives up after its
    10 s timeout (nonlinear arithmetic).
    A counterexample to this claim is a real one (the machine is deterministic;
-   `Halts.safe`). It is turned into a refutation of the claim *as stated*
-   (`¬ ∀ x̄, Halts …`) by running the CEK machine on it (`UplcProof.Cex.analyse`),
-   checked by the kernel in a throwaway environment, and the tactic fails with
-   status `refuted`. Blaster's "valid" is never used as a proof: it is recorded
-   (`oracle`) and the kernel stage runs.
+   `Halts.safe`, `Fails.noHalt`). It is turned into a refutation of the claim
+   *as stated* (a proof of `¬ ∀ x̄, Halts …`) by running the CEK machine on it
+   (`UplcProof.Cex.analyse`), checked by the kernel in a throwaway environment,
+   and the tactic fails with status `refuted`. Blaster's "valid" is never used as
+   a proof: it is recorded (`"blaster":"valid"`; the status is `oracle` only if
+   the kernel stage then fails) and the kernel stage runs.
    `(bound := halts)` states the bounded claim as
    `cekExecuteProgram p args N = State.Halt v` instead. Running out of fuel is
    then a counterexample too, and z3 mostly returns such inputs (for both
@@ -614,8 +615,8 @@ def attempts (g : MVarId) (opts : Opts) (simpArgs : Array Syntax) : TacticM (Arr
         if isInt then intInductionOn opts simpArgs g x else inductionOn opts simpArgs g x } : Attempt)
     return if loops then inds.push run else #[run] ++ inds
 
-/-- The comparisons of integers, unfolded for `uplc_eq` (`lessThanInteger 0 x`
-    to `decide (0 < x)`). -/
+/-- Comparisons on integers and byte strings, unfolded for `uplc_eq`
+    (`lessThanInteger 0 x` to `decide (0 < x)`), and `beq_self_eq_true`. -/
 def defaultLemmas : Array Name :=
   #[``PlutusCore.Integer.lessThanInteger, ``PlutusCore.Integer.lessThanEqualsInteger,
     ``PlutusCore.Integer.equalsInteger, ``PlutusCore.ByteString.equalsByteString,

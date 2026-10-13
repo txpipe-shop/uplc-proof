@@ -134,10 +134,10 @@ private inductive RunLink where
     well-founded recursion too), or takes more than `fuel` steps.
 
     The segments `exec a c = b` are checked by the kernel only (each step was
-    computed by `whnf`; the kernel re-runs it). Cost: about 4.5 `maxHeartbeats`
-    units per step, so runs of up to about 40,000 steps fit in the default 200,000
-    (`fib 13`: 33,891 steps, 151,000 units, 4.4 s); longer runs need
-    `set_option maxHeartbeats 0` (`fib 14`: 54,861 steps, 246,000 units, 7.3 s;
+    computed by `whnf`; the kernel re-runs it). Cost: about 4.1 `maxHeartbeats`
+    units per step, so runs of up to about 48,000 steps fit in the default 200,000
+    (`fib 13`: 33,891 steps, 137,000 units, 3.6 s); longer runs need
+    `set_option maxHeartbeats 0` (`fib 14`: 54,861 steps, 223,000 units, 6.0 s;
     `fib 15`: 88,791 steps), and the kernel's check then takes about as long again
     (timings: Apple M5, Lean 4.24). A full `ScriptContext` run of a real validator
     is far shorter (1,228 steps, two `equalsData`).

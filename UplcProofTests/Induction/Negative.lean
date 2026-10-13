@@ -110,6 +110,12 @@ example (xs : List Int) (t : Int) :
   fails_with "on the branch [¬0 < t]: the script fails" (left; uplc_induction xs)
   right; trivial
 
+-- halts without `n ≤ 1000000`: the error names the branch that fails (and the
+-- comparison with the large literal is a branch, not a recursion-depth error)
+example (n : Nat) : Halts sumToBoundedHex.script [int n] (intV (triangle n)) ∨ True := by
+  fails_with "1000000]: the script fails (reaches `Error`)" (left; uplc_induction n)
+  right; trivial
+
 -- induction on the wrong variable: the run waits on `xs`, not on `n`
 example (xs : List Int) (n : Nat) :
     Halts requireMemberHex.script [list xs, int n] (.VCon (.Bool true)) ∨ True := by

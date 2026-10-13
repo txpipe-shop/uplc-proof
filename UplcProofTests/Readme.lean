@@ -3,9 +3,12 @@ import UplcProof
 /-!
 # The README's examples, checked
 
-Every Lean block of `README.md` is here verbatim. `#import_uplc` declares its name
-at the root, whatever the namespace: the names here must differ from those of the
-other test modules (`lake build UplcProofTests` fails otherwise).
+Every Lean block of `README.md` is here verbatim (§1, §3), with the claims its
+prose and its table make: the fixed vault is proved (§3), `uplc_auto` proves a
+true property given `(loop := …)` (§2), and `Reachable.invariant` (§4).
+`#import_uplc` declares its name at the root, whatever the namespace: the names
+here must differ from those of the other test modules (`lake build
+UplcProofTests` fails otherwise).
 -/
 
 open UplcProof

@@ -10,8 +10,7 @@ term and elaborates it at the binder's type `ty`, in the current file (its
 recovery is off), no holes, no error message logged on the way. Elaboration
 leaves no messages and no info trees behind.
 
-`elabValue` is the same for a term already parsed (`refute_with`'s arguments,
-`Render`'s round trip).
+`elabValue` is the same for a term already parsed (`Render`'s round trip).
 -/
 
 open Lean Meta Elab Term

@@ -39,13 +39,25 @@ private def isStructuralType (ty : Expr) : MetaM Bool := do
     so the unchanged parts of the next state are not traversed again). -/
 abbrev Cache := IO.Ref (Std.HashMap Expr Expr)
 
+/-- `whnf e`, or `none` when reduction runs out of recursion depth. A symbolic `Nat`
+    under a literal can do that: `↑(n + 1) ≤ 1000000` unfolds to a match on
+    `n + 1 - 1000000 : Nat`, and `Nat.sub` recurses on its second argument, the literal,
+    one `Nat.pred` per unit. Such a term is left as it is (stuck): the run then branches
+    on it, and `uplc_cond` decides it. -/
+def whnfBounded? (e : Expr) : MetaM (Option Expr) := do
+  let s ← saveState
+  tryCatchRuntimeEx (some <$> whnf e) fun ex => do
+    unless ex.isMaxRecDepth do throw ex
+    s.restore
+    return none
+
 /-- Expose the constructors of `e` (recursively, through structural types only). -/
 partial def norm (cache : Cache) (e : Expr) : MetaM Expr := do
   let rec go (e : Expr) : MetaM Expr := do
     if let some r := (← cache.get).get? e then return r
     let r ← do
       unless ← isStructuralType (← inferType e) do return e
-      let e' ← whnf e
+      let some e' ← whnfBounded? e | return e
       let fn := e'.getAppFn
       -- a term that reduces to a variable is that variable (the stack `step.folding [] s` is `s`)
       let some c := fn.constName? | return if e'.isFVar then e' else e
@@ -75,7 +87,7 @@ def throwShort (msg : MessageData) : MetaM α :=
     machine does next (it depends on symbolic data). -/
 private def stepE (cache : Cache) (st : Expr) : MetaM (Option Expr) := do
   let e := mkApp2 (mkConst ``PlutusCore.UPLC.CekMachine.step) (← svDefault) st
-  let e' ← whnf e
+  let some e' ← whnfBounded? e | return none
   match ctorName? e' with
   | some ``State.Eval | some ``State.Return | some ``State.Error | some ``State.Halt =>
     return some (← norm cache e')

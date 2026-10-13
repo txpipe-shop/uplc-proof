@@ -33,9 +33,8 @@ private def neClosers : Array Closer :=
 /-- `evalRun`, off the heartbeat budget: no limit during the run (it is bounded by
     its fuel, `Tactic.maxSteps` CEK steps), and its heartbeats do not count against
     the enclosing tactic afterwards (the count is restored). Under the default
-    `maxHeartbeats` (200000) a run of more than about 48,000 steps would not fit:
-    `fib 13` (33,891 steps) takes about 137,000 heartbeats, `fib 14` (54,861 steps)
-    about 222,000. -/
+    `maxHeartbeats` (200000) a run of more than about 48,000 steps would not fit
+    (the costs are in `Tactic.evalRun`'s doc). -/
 private def evalRunUnbounded (p args : Expr) : TacticM (Expr × Expr) := do
   let hb ← IO.getNumHeartbeats
   try

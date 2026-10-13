@@ -48,6 +48,8 @@ def halted : State → Bool
   "Tests/Induction/Scripts/factorial.hex"
 #import_uplc UplcProofTests.Induction.sumToHex PlutusV3 single_cbor_hex
   "Tests/Induction/Scripts/sum_to.hex"
+#import_uplc UplcProofTests.Induction.sumToBoundedHex PlutusV3 single_cbor_hex
+  "Tests/Induction/Scripts/sum_to_bounded.hex"
 #import_uplc UplcProofTests.Induction.countdownHex PlutusV3 single_cbor_hex
   "Tests/Induction/Scripts/countdown.hex"
 #import_uplc UplcProofTests.Induction.powerHex PlutusV3 single_cbor_hex
@@ -138,6 +140,8 @@ def has (x : Int) : List Int → Bool
 #guard haltInt (run factorialHex.script [int 10]) == some (fact 10)
 #guard haltInt (run factorialOldHex.script [int 10]) == some (fact 10)
 #guard haltInt (run sumToHex.script [int 100]) == some (triangle 100)
+#guard haltInt (run sumToBoundedHex.script [int 100]) == some (triangle 100)
+#guard !halted (run sumToBoundedHex.script [int 1000001])
 #guard haltList (run countdownHex.script [int 3]) == some (countdown 3)
 #guard haltInt (run powerHex.script [int (-2), int 3]) == some ((-2) ^ 3)
 #guard haltInt (run sumHex.script [list [4, 23, 56]]) == some [4, 23, 56].sum
@@ -172,6 +176,14 @@ theorem factorial_old_halts (n : Nat) : Halts factorialOldHex.script [int n] (in
   uplc_induction n
 
 theorem sum_to_halts (n : Nat) : Halts sumToHex.script [int n] (intV (triangle n)) := by
+  uplc_induction n
+
+/-- The script compares `n` with the literal 1000000 (`sum_to_bounded`). After the
+    split on `n`, `↑(n + 1) ≤ 1000000` stays a branch condition (reducing it would
+    unfold `n + 1 - 1000000 : Nat` one unit at a time, past the recursion limit);
+    `h` closes the branch where the script fails. -/
+theorem sum_to_bounded_halts (n : Nat) (h : n ≤ 1000000) :
+    Halts sumToBoundedHex.script [int n] (intV (triangle n)) := by
   uplc_induction n
 
 theorem countdown_halts (n : Nat) : Halts countdownHex.script [int n] (listV (countdown n)) := by
@@ -342,6 +354,8 @@ example (m : Nat) :
 #guard_msgs in #print axioms factorial_old_halts
 /-- info: 'UplcProofTests.Induction.sum_to_halts' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms sum_to_halts
+/-- info: 'UplcProofTests.Induction.sum_to_bounded_halts' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms sum_to_bounded_halts
 /-- info: 'UplcProofTests.Induction.countdown_halts' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms countdown_halts
 /-- info: 'UplcProofTests.Induction.fib_halts' depends on axioms: [propext, Quot.sound] -/

@@ -26,7 +26,8 @@ The result is not wrapped in `Data`: a `Bool` result halts as `VCon (Bool b)`
 The encoders, the results and `Accepts` are `abbrev`s (except `boolData`, a `def`
 by cases), so a claim written with them is a `Halts`/`Fails` claim for
 `uplc_induction` and `uplc_run`, and `simp` sees through them. `Verdict` is a
-`def`: `Verdict.accepts` and `Verdict.rejects` turn it into an `Accepts` claim.
+`def`: `Verdict.accepts` and `Verdict.rejects` turn it into `Accepts s c` or
+`¬ Accepts s c`.
 -/
 
 open PlutusCore.UPLC.Term PlutusCore.UPLC.CekValue PlutusCore.UPLC.CekMachine
@@ -74,9 +75,9 @@ abbrev vFalse : CekValue := .VCon (.Bool false)
 /-- The unit value: what a Plutus V3 validator halts with when it accepts. -/
 abbrev vUnit : CekValue := .VCon .Unit
 
-/-! ## On-chain judgement -/
+/-! ## On-chain judgment -/
 
-/-- The ledger's judgement for Plutus V3: the script, applied to the script
+/-- The ledger's judgment for Plutus V3: the script, applied to the script
     context, halts with `()`. Anything else (an `error`, a failed `expect`, a
     `False` turned into `error` by Aiken) is a rejection. An `abbrev`: a goal
     `Accepts s c` is a `Halts` claim for `uplc_run` and `uplc_induction`. -/

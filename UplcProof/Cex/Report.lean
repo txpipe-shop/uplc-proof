@@ -68,7 +68,7 @@ structure Report where
   status : Status
   kernel : Bool := false
   entries : Array Entry := #[]
-  /-- The Lean text of the refuted proposition `¬ S`, when it re-elaborates. -/
+  /-- The Lean text of `¬ S` (`S` the refuted statement), when it re-elaborates. -/
   negation? : Option String := none
   /-- The closer that refuted the conclusion. -/
   closer? : Option String := none

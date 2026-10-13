@@ -18,7 +18,8 @@ import UplcProof.Cex.Value
 | anything else with an `IsData` instance (`TxOutRef`, `ScriptContext`, …) | its `IsData.toData`, as `Data` |
 | anything else | `null` |
 
-The Lean text (`Render`) is always there; JSON is the machine-readable view of it.
+The Lean text (`Render`) is the primary view when one round-trips (`"lean"` is
+`null` otherwise); JSON is the machine-readable view.
 -/
 
 open Lean Meta

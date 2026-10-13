@@ -17,6 +17,7 @@ validator vault {
   }
 }
 
+/// The property: the vault accepts a withdrawal only up to its cap.
 test prop_accepts_only_up_to_cap(args via fuzz.both(fuzz.int(), fuzz.int())) {
   let (cap, amount) = args
   let ok =

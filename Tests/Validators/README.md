@@ -1,12 +1,11 @@
 # Validator fixtures
 
 Two Plutus V3 validators, copied verbatim (the `compiledCode` field, single-CBOR
-hex, no trailing newline) from the blueprint `plutus.json` of
-[aiken-blaster-examples](https://github.com/txpipe-shop/aiken-blaster-examples) (compiled
-with Aiken v1.1.22+39d6b04; the validators' sources are `validators/time_lock.ak`
-and `validators/vault.ak` there).
+hex, no trailing newline) from the blueprint `plutus.json` of TxPipe's
+aiken-blaster-examples, not public yet (compiled with aiken v1.1.22+39d6b04; the
+validators' sources are `validators/time_lock.ak` and `validators/vault.ak` there).
 
-| File | Blueprint title | Script hash | Parameters, then |
+| File | Blueprint title | Script hash | Arguments |
 |---|---|---|---|
 | `time_lock.hex` | `time_lock.time_lock.spend` | `94c1401b1e12f94f8128fc2f368555bd3e3def56708937594917431d` | the `ScriptContext` |
 | `vault.hex` | `vault.vault.spend` | `596e80a69c51ebbe2843b05c03f973fd16035f045c77b0de6495d4b3` | `seed_utxo : OutputReference`, then the `ScriptContext` |

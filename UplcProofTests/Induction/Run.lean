@@ -171,7 +171,9 @@ elab "refute_run" : tactic => do
     let ne ← mkFreshExprMVar (← mkAppM ``Ne #[← whnfD v, w])
     let r ← observing? do
       let [] ← Tactic.run ne.mvarId! (withoutRecover (evalTactic (← `(tactic| simp)))) | failure
-    if r.isNone then throwError "refute_run: the run halts with{indentExpr w}\nthe claimed value"
+    if r.isNone then
+      throwError "refute_run: the run halts with{indentExpr w}\nwhich `simp` does not show to \
+        differ from the claimed value"
     g.assign (mkAppN (mkConst ``not_halts_of_reaches_halt) #[p, args, v, w, pf, ← instantiateMVars ne])
   replaceMainGoal []
 
@@ -339,7 +341,8 @@ theorem factorial_eventually (n : Nat) :
       cekExecuteProgram factorialHex.script [int n] fuel = .Halt (intV (fact n)) :=
   (factorial_halts n).eventually
 
-/-- `Reaches.inv` (`Terminal`): a run that halts halts from every state it goes through. -/
+/-- `Reaches.inv` (`Terminal`): a run that halts reaches that `Halt` from every state
+    it passes through. -/
 theorem factorial_halts_from (n c : Nat) :
     Reaches (exec (initState factorialHex.script [int n]) c) (.Halt (intV (fact n))) :=
   (factorial_halts n).reaches.inv c rfl trivial

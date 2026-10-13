@@ -8,7 +8,7 @@ separate it from a Lean term, all removed here, as pure text (no elaboration):
 
 1. `(let ((a!1 v) …) body)`: z3's sharing; inlined (SMT-LIB `let` is parallel).
 2. `(as List.nil (@List @T))`: type ascriptions; dropped.
-3. `(- 3)`: negative numerals; become `-3` (parenthesised as an argument).
+3. `(- 3)`: negative numerals; become `-3` (parenthesized as an argument).
 4. `"\u{c3}\u{bf}"`, `""""`: z3's string escapes; decoded, then re-escaped as a
    Lean string literal (`"\xc3\xbf"`, `"\""`).
 
@@ -159,7 +159,7 @@ def leanStringLit (s : String) : String := Id.run do
   return out ++ "\""
 
 /-- Renders a cleaned s-expression as Lean text. `short` shortens names for
-    display; `arg` parenthesises applications and negative numerals.
+    display; `arg` parenthesizes applications and negative numerals.
     `List.cons a (List.cons b List.nil)` becomes `[a, b]`, `Prod.mk a b`
     becomes `(a, b)`. -/
 private partial def toLean (short : Bool) (arg : Bool) : SExp → String

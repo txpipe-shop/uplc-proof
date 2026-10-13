@@ -514,9 +514,9 @@ theorem factorial_not_fails : ¬ ∀ (n : Int), Fails factorialHex.script [int n
 32,000 heartbeats, more than the budget set here (20,000; the same holds at the
 default 200,000 from `n = 14`, 54,861 steps, about 222,000 heartbeats, too costly
 to check here). The run itself has no limit and does not count against the
-closer, which goes on (`v ≠ w`) within its own budget. (Before that, the closer
-failed with a heartbeat timeout after the run, and `refute_with` with "no closer
-proves".) -/
+closer, which goes on (`v ≠ w`) within its own budget. (Were the run counted, the
+closer would fail with a heartbeat timeout after it, and `refute_with` with "no
+closer proves".) -/
 
 /-- info: Successfully decoded single CBOR hex 'Tests/Induction/Scripts/fib.hex' -/
 #guard_msgs in
