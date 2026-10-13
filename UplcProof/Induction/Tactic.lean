@@ -711,6 +711,55 @@ def byteOrderContra? (g : MVarId) : MetaM (Option Expr) := g.withContext do
     return some (← mkAppM ``ByteOrder.false_of_lt_self #[self])
   return none
 
+/-- `omega` on `r` with the hypotheses `hidden` added back (those whose variables `r` still
+    has); assigns `r` if it closes. Not tried when the facts `omega` would read are among
+    `known` (it failed on those), nor on facts it already failed on in this session. -/
+private def omegaWithBack (r : MVarId) (hidden : Array LocalDecl) (known : Std.HashSet Expr) :
+    TacticM Bool := do
+  let decl ← r.getDecl
+  let mut lctx := decl.lctx
+  let mut added := false
+  for d in hidden do
+    let ty ← instantiateMVars d.type
+    if lctx.contains d.fvarId || ty.hasAnyFVar (!lctx.contains ·) then continue
+    lctx := lctx.mkLocalDecl d.fvarId d.userName ty d.binderInfo
+    added := true
+  unless added do return false
+  let r2 ← mkFreshExprMVarAt lctx decl.localInstances decl.type .syntheticOpaque decl.userName
+  let facts ← omegaFacts r2.mvarId!
+  if facts.all known.contains then return false
+  let memo := (← refuteMemo?).bind (·.1)
+  if let some fails := memo then
+    if (← fails.get).contains facts then return false
+  let ok ← timed "refute.arith-back" <| observing? do
+    let [] ← Tactic.run r2.mvarId! (withoutRecover (evalTactic (← `(tactic| omega)))) | failure
+  unless ok.isSome do
+    if let some fails := memo then fails.modify (·.insert facts)
+    return false
+  r.assign r2
+  return true
+
+/-- For `refute`, after `omega` failed on the goal: `t` without the arithmetic hypotheses
+    (`clear_arith`: `simp_all` can loop on `0 = x`), then `omega` with them back on each goal
+    `t` leaves, where `t` brought a fact `omega` reads (`¬ i = j`, from `¬ (s = t ∧ i = j)` and
+    `s = t`, against `i = j`). The goals `omega` does not close stay, as `t` left them. -/
+elab "hiding_arith " t:tactic : tactic => do
+  let g ← getMainGoal
+  let (hidden, known, g1) ← g.withContext do
+    let lctx ← getLCtx
+    let hs ← lctx.getFVarIds.filterM fun x => do isArith (← instantiateMVars (← x.getType))
+    let g1 ← g.tryClearMany hs
+    let lctx1 := (← g1.getDecl).lctx
+    let known := Std.HashSet.ofArray (← omegaFacts g)
+    return (hs.filterMap fun x => if lctx1.contains x then none else lctx.find? x, known, g1)
+  replaceMainGoal [g1]
+  evalTactic t
+  if hidden.isEmpty then return
+  let rest ← (← getGoals).filterM fun r => do
+    if ← r.isAssigned then return false
+    return !(← omegaWithBack r hidden known)
+  setGoals rest
+
 /-- Closes `g` if its hypotheses are contradictory: the branch cannot happen. -/
 def refute (ctx : Ctx) (g : MVarId) (full := true) (simp := true) : TacticM Bool := g.withContext do
   if ctx.aux && (← quickRefute) then
@@ -745,11 +794,12 @@ def refute (ctx : Ctx) (g : MVarId) (full := true) (simp := true) : TacticM Bool
     if okO then pure true
     else if !simp then pure false
     else
-      -- without the arithmetic first (`omega` had them; `simp_all` can loop on `0 = x`), then
-      -- with them (`hi : i = j` may be what refutes `¬(s = t ∧ i = j)`): `done` makes the first
-      -- give way when it leaves a goal
+      -- without the arithmetic first (`omega` had them; `simp_all` can loop on `0 = x`), and
+      -- `omega` with them on what is left (`hiding_arith`); with them only if that fails to
+      -- run. A goal left open is a failure: a second `simp_all` with the arithmetic on it
+      -- rarely closes one, and costs several times the first on large contexts
       let simpTac ← `(tactic| first
-        | (clear_arith; (try simp [$ts,*] at *) <;> simp_all [$ts,*]; done)
+        | hiding_arith ((try simp [$ts,*] at *) <;> simp_all [$ts,*])
         | simp_all [$ts,*])
       match sMemo with
       | none => timed "refute.simp" (closesOn g0 simpTac)
@@ -765,7 +815,7 @@ def refute (ctx : Ctx) (g : MVarId) (full := true) (simp := true) : TacticM Bool
   else if ← perfEnabled then do
     -- the same as the `first` below, one alternative at a time, to see which one closes
     let alts := #[("refute.omega", ← `(tactic| omega)),
-      ("refute.simp_all.1", ← `(tactic| (clear_arith; (try simp [$ts,*] at *) <;> simp_all [$ts,*]; done))),
+      ("refute.simp_all.1", ← `(tactic| hiding_arith ((try simp [$ts,*] at *) <;> simp_all [$ts,*]))),
       ("refute.simp_all.2", ← `(tactic| simp_all [$ts,*]))]
     let mut ok := false
     let g0 ← clean f.mvarId!
@@ -798,7 +848,7 @@ def refute (ctx : Ctx) (g : MVarId) (full := true) (simp := true) : TacticM Bool
   else
     timed "refute" (closes f.mvarId! (← `(tactic| first
       | omega
-      | (clear_arith; (try simp [$ts,*] at *) <;> simp_all [$ts,*]; done)
+      | hiding_arith ((try simp [$ts,*] at *) <;> simp_all [$ts,*])
       | simp_all [$ts,*])))
   unless ok do return false
   g.assign (← mkFalseElim (← g.getType) f)
