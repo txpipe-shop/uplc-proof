@@ -14,7 +14,7 @@ aiken="${AIKEN:-aiken}"
 
 if [ "$#" -eq 0 ]; then
   set -- factorial sum_to sum product alternating_sum length sum_squares double_all countdown \
-    power sum_acc factorial_acc count_positive_acc reverse_acc last_or sum_acc_first count_positive fib half \
+    power sum_acc factorial_acc count_positive_acc reverse_acc sum_prod last_or sum_acc_first count_positive fib half \
     tribonacci even_or_fail sum_pairs require_member sum_if_positive \
     check_signer count_true signed_by require_ref same_data same_refs sum_to_bounded
 fi

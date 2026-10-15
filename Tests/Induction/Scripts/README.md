@@ -30,6 +30,7 @@ An argument that changes at each call (an accumulator) is passed too
 | `sum_acc(xs, acc)`, `count_positive_acc`, `reverse_acc` | on a list, with an accumulator (`Int`, `List<Int>`) | proved (`generalizing acc`) |
 | `last_or(xs, acc)` | on a list; the accumulator replaced by the head | proved (`generalizing acc`) |
 | `factorial_acc(n, acc)` | on `n : Int`, with an accumulator | proved (`generalizing acc`) |
+| `sum_prod(xs, ys)` | on two lists consumed together (both shrink each call) | proved (`generalizing`) |
 | `sum_acc_first(acc, xs)` | the accumulator before the list | refused (limitation) |
 | `count_positive` | on a list, branching on `x > 0` | proved |
 | `require_member(xs, x)` | `has(xs, x)` on a list, then `True` or `fail` | proved (`Halts` and `Fails`; also `uplc_run` on a known list) |
@@ -50,3 +51,7 @@ An argument that changes at each call (an accumulator) is passed too
 differs from `factorial.hex` only in the decrement's operand order
 (`addInteger (-1) n` there, `addInteger n (-1)` here): it comes from another
 compiler build (aiken version not recorded). The tests prove both.
+
+`math_sum_prod.hex` (aiken-blaster-examples' `verify/Scripts/math_sum_prod.hex`)
+is likewise a copied build (aiken version not recorded); `sum_prod` was added to
+`fixtures.ak` for reference, but the tested hex is that copy, not a fresh export.

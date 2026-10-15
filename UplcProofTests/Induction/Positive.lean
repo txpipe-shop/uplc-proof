@@ -56,6 +56,8 @@ def halted : State → Bool
   "Tests/Induction/Scripts/power.hex"
 #import_uplc UplcProofTests.Induction.sumHex PlutusV3 single_cbor_hex
   "Tests/Induction/Scripts/sum.hex"
+#import_uplc UplcProofTests.Induction.sumProdHex PlutusV3 single_cbor_hex
+  "Tests/Induction/Scripts/math_sum_prod.hex"
 #import_uplc UplcProofTests.Induction.productHex PlutusV3 single_cbor_hex
   "Tests/Induction/Scripts/product.hex"
 #import_uplc UplcProofTests.Induction.altSumHex PlutusV3 single_cbor_hex
@@ -125,6 +127,12 @@ def sumSq : List Int → Int
   | [] => 0
   | x :: xs => x * x + sumSq xs
 
+/-- Truncated dot product: `Σᵢ xs[i] * ys[i]` up to the shorter list. -/
+def dot : List Int → List Int → Int
+  | [], _            => 0
+  | _ :: _, []       => 0
+  | x :: xs, y :: ys => x * y + dot xs ys
+
 def fib : Nat → Nat
   | 0 => 0
   | 1 => 1
@@ -166,6 +174,9 @@ def has (x : Int) : List Int → Bool
 #guard !halted (run requireMemberHex.script [list [1, 2, 3], int 5])
 #guard haltInt (run sumIfPositiveHex.script [list [1, 2], int 1]) == some 3
 #guard !halted (run sumIfPositiveHex.script [list [1, 2], int 0])
+#guard haltInt (run sumProdHex.script [list [4, 23, 56], list [1, 2, 3]]) == some 218
+#guard haltInt (run sumProdHex.script [list [4, 23, 56], list [1, 2]]) == some 50
+#guard haltInt (run sumProdHex.script [list [], list [1, 2]]) == some 0
 
 /-! ## Proofs for every input -/
 
@@ -247,6 +258,12 @@ theorem reverse_acc_halts (xs acc : List Int) :
 theorem last_or_halts (xs : List Int) (acc : Int) :
     Halts lastOrHex.script [list xs, int acc] (intV (xs.getLast?.getD acc)) := by
   uplc_induction xs generalizing acc [List.getLast?_cons]
+
+/-- Two lists consumed together: `xs` is the induction variable, `ys` the
+    changing second argument. -/
+theorem sum_prod_halts (xs ys : List Int) :
+    Halts sumProdHex.script [list xs, list ys] (intV (dot xs ys)) := by
+  uplc_induction xs generalizing ys
 
 /-! ## Branches on the data -/
 
@@ -388,6 +405,8 @@ example (m : Nat) :
 #guard_msgs in #print axioms reverse_acc_halts
 /-- info: 'UplcProofTests.Induction.last_or_halts' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms last_or_halts
+/-- info: 'UplcProofTests.Induction.sum_prod_halts' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms sum_prod_halts
 /-- info: 'UplcProofTests.Induction.require_member_halts' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms require_member_halts
 /-- info: 'UplcProofTests.Induction.require_member_fails' depends on axioms: [propext, Quot.sound] -/
