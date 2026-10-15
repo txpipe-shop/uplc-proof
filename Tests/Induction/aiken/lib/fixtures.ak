@@ -110,6 +110,18 @@ pub fn reverse_acc(xs: List<Int>, acc: List<Int>) -> List<Int> {
   }
 }
 
+/// Two list parameters consumed together (simultaneous structural recursion).
+pub fn sum_prod(xs: List<Int>, ys: List<Int>) -> Int {
+  when xs is {
+    [] -> 0
+    [x, ..xs] ->
+      when ys is {
+        [] -> 0
+        [y, ..ys] -> x * y + sum_prod(xs, ys)
+      }
+  }
+}
+
 /// The accumulator replaced by an element (`acc := x`).
 pub fn last_or(xs: List<Int>, acc: Int) -> Int {
   when xs is {

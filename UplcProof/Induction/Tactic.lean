@@ -366,6 +366,10 @@ structure Ctx where
   res? : Option Expr
   /-- The accumulator (`generalizing acc`). -/
   gen? : Option Expr
+  /-- The accumulator's type, captured while `gen?` is still in scope: the run may
+      eliminate the accumulator's variable (an inlined `match` on it) before the
+      first loop head, so `inferType gen?` is not available there. -/
+  accTy : Option Expr := none
   /-- Extra lemmas for `uplc_eq`. -/
   ts : SimpArgs
   /-- The loop invariants and induction hypotheses at hand. -/
@@ -939,7 +943,11 @@ private partial def foldMaps (e : Expr) : MetaM Expr := do
     replaced `acc` (as `acc := x`), the one in `v`. -/
 private def inferAcc (ctx : Ctx) (acc v : Expr) : MetaM Expr := do
   let v ← foldMaps v
-  let σ ← inferType acc
+  -- The accumulator's variable may have been eliminated (an inlined `match` on it)
+  -- before this loop head; use its type captured up front when available.
+  let σ ← match ctx.accTy with
+    | some t => pure t
+    | none => inferType acc
   let held ← heldTerms (·.containsFVar acc.fvarId!) σ v
   let held ← if held.isEmpty then heldTerms (fun _ => true) σ v else pure held
   let [e] := held.toList.eraseDups
@@ -1284,6 +1292,7 @@ def uplcInduction (n : Expr) (gen? : Option Expr) (simpArgs : Array Syntax) (loo
         throwError "uplc_induction: the loop's result{indentExpr r}\nmentions `{mkFVar x}`, \
           which the loop does not see: write it with the loop's own arguments (`fun k => …` \
           with `k` for `{n}`; `xs.headD 0` rather than `xs.head h`)."
+  let accTy ← gen?.mapM fun a => do whnfR (← inferType a)
   let mut specs := #[]
   for e in v?.toList ++ loop?.toList do specs := specs ++ (← specDefs e)
   let ts : SimpArgs := ⟨mkSepArray (simpArgs ++ specs) (mkAtom ",")⟩
@@ -1297,7 +1306,7 @@ def uplcInduction (n : Expr) (gen? : Option Expr) (simpArgs : Array Syntax) (loo
     | some v => mkApp4 (mkConst ``Halts.of_reaches) p args v g'
     | none => mkApp3 (mkConst ``Fails.of_reaches) p args g'
   let run (pairs : Bool) : TacticM Unit :=
-    drive { τ, res?, ts, gen?, pairs, splits := if pairs then 2 else 1, candidates := #[n],
+    drive { τ, res?, ts, gen?, accTy, pairs, splits := if pairs then 2 else 1, candidates := #[n],
             split? := some n, phase := "entry" } g'.mvarId!
   -- recursion on `n - 2` (`fib`) needs induction on pairs: tried when the plain one fails
   -- (`catch` restores the state: `TacticM`'s `try … catch` backtracks)
